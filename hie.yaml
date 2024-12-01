@@ -1,0 +1,3 @@
+cradle:
+  bios:
+    shell: "nix run .#haskell-hie-bios"
