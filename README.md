@@ -12,7 +12,7 @@ Starts a nix shell with `nix develop` (or use direnv).
 
 # Benchmarks / Testing
 
-You can run a global test using `nix run .#benchmark`, it gives the individual
+You can run a global test using `nix run .#bench`, it gives the individual
 test time as well as global timing. It uses `sydtest` underneath, so you can
 use filtering (for performant execution of individual tests) or other nice
 features.
