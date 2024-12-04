@@ -2,15 +2,11 @@ module Day04 where
 
 import Utils
 import qualified Data.Map.Strict as Map
-import qualified Data.Text as Text
 import Control.Monad (guard)
 
 fileContent = parseContent $(getFile)
 
-parseContent content = Map.fromList $ do
-  (lIdx, l) <- zip [0 :: Int ..] (Text.lines content)
-  (cIdx, c) <- zip [9 :: Int ..] (Text.unpack l)
-  pure $ ((lIdx, cIdx), c)
+parseContent = parse2DGrid @Char id
 
 -- * Generics
 readWord (x, y) (dx, dy) m = sequenceA $ map (\d -> Map.lookup (x + dx * d, y + dy * d)  m) [1..3]

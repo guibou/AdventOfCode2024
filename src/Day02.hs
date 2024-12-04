@@ -1,12 +1,11 @@
 module Day02 where
 
 import Utils
-import qualified Data.Text as Text
 
 fileContent = parseContent $(getFile)
 
 parseContent :: Text -> [[Int]]
-parseContent = fmap (fmap (read . Text.unpack) . Text.words) . Text.lines
+parseContent = unsafeRead2D
 
 -- * Generics
 isSafe l = do
