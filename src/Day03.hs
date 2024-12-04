@@ -33,7 +33,7 @@ day content = sum $ map (\(a, b) -> a * b) $
     )
     ((content =~ reg) :: [MatchText Text])
   where
-    reg = "mul\\(([0-9]+),([0-9]+)\\)" :: String
+    reg = "mul\\(([0-9]+),([0-9]+)\\)" :: Text
 
 -- * SECOND problem
 
