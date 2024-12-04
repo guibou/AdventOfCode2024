@@ -60,6 +60,7 @@
           "Chart-diagrams"
           "aeson-pretty"
           "range"
+          "regex-tdfa"
         ];
 
         extensions = [
