@@ -2,22 +2,22 @@ module Day07 where
 
 import Utils
 import Control.Applicative
-import Control.Monad.Combinators (sepBy)
 
 fileContent = parseContent $(getFile)
 
 parseContent = unsafeParse $ do
   some $ do
-    n <- parseNumber
-    ": "
-    res <- some parseNumber
-    "\n"
+    n <- parseNumber @Int
+    void ": "
+    res <- some (parseNumber @Int)
+    void "\n"
     pure (n, res)
 
 -- * Generics
 evalExpr (resValue, numbers) = resValue `elem` possible_values
   where
     possible_values = go (reverse numbers)
+    go [] = error "impossible case"
     go [x] = [x]
     go (x:xs) = do
       res' <- go xs
@@ -26,16 +26,17 @@ evalExpr (resValue, numbers) = resValue `elem` possible_values
 evalExpr' (resValue, numbers) = resValue `elem` possible_values
   where
     possible_values = go (reverse numbers)
+    go [] = error "impossible case"
     go [x] = [x]
     go (x:xs) = do
       res' <- go xs
       [x * res', x + res', read (show res' <> show x)]
 
 -- * FIRST problem
-day = sum . map fst . filter evalExpr
+day = sum @[] @Int . map fst . filter evalExpr
 
 -- * SECOND problem
-day' = sum . map fst . filter evalExpr'
+day' = sum @[] @Int . map fst . filter evalExpr'
 
 ex = parseContent [str|\
 190: 10 19

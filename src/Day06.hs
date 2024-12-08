@@ -4,9 +4,7 @@ import Utils
 import qualified Data.Map.Strict as Map
 import Data.List (find)
 import Direction
-import Debug.Trace
 import qualified Data.Set as Set
-import Control.Monad (guard)
 
 fileContent = parseContent $(getFile)
 
@@ -33,8 +31,9 @@ computePath content = do
           Just '.' -> go (stepCount +1) pos' dir
           Just '#' -> go stepCount pos (turnRight dir)
           Just '^' -> go (stepCount + 1) pos' dir
+          v -> error (show v)
 
-  go 0 guard_position current_dir
+  go (0 :: Int) guard_position current_dir
 
 turnRight U = R
 turnRight R = D
@@ -51,12 +50,11 @@ checkForInfiniteLoop l = go mempty l
 -- * SECOND problem
 day' content = length $ do
   -- First approximation of nice placments: on the initial path
-  -- let freePlaces = Map.keys $ Map.filter (\x -> x == '.') content
   let (firstPlace:freePlaces') = map fst $ computePath content
   let freePlaces = Set.delete firstPlace (Set.fromList freePlaces')
-  (freeIdx, freePlace) <- zip [0..] (Set.toList freePlaces)
+  freePlace <- (Set.toList freePlaces)
   let path = computePath (Map.insert freePlace '#' content)
-  guard $ traceShow ("checking", freeIdx, length freePlaces) $ checkForInfiniteLoop path
+  guard $ checkForInfiniteLoop path
   pure freePlace
 
 ex = parseContent [str|\

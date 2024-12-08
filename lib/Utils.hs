@@ -28,6 +28,9 @@ module Utils
     module Data.Functor.Identity,
     ($>),
     (<$),
+
+    -- * Nice reexport
+    void, guard
   )
 where
 
