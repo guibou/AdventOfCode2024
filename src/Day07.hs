@@ -14,29 +14,31 @@ parseContent = unsafeParse $ do
     pure (n, res)
 
 -- * Generics
-evalExpr (resValue, numbers) = resValue `elem` possible_values
+evalExpr :: (Int -> Int -> [Int]) -> (Int, [Int]) -> Bool
+evalExpr _ (_, []) = False
+evalExpr makeExpr (resValue, x:numbers) = go x numbers
   where
-    possible_values = go (reverse numbers)
-    go [] = error "impossible case"
-    go [x] = [x]
-    go (x:xs) = do
-      res' <- go xs
-      [x * res', x + res']
+    go :: Int -> [Int] -> Bool
+    go acc [] = acc == resValue
+    go acc (x:xs)
+      | acc > resValue = False
+      | otherwise = or $ do
+          newAcc <- makeExpr acc x
+          pure $ go newAcc xs
 
-evalExpr' (resValue, numbers) = resValue `elem` possible_values
-  where
-    possible_values = go (reverse numbers)
-    go [] = error "impossible case"
-    go [x] = [x]
-    go (x:xs) = do
-      res' <- go xs
-      [x * res', x + res', read (show res' <> show x)]
+pad x 0 = x
+pad x y = pad (x * 10) (y `div` 10)
 
 -- * FIRST problem
-day = sum @[] @Int . map fst . filter evalExpr
+exprDay1 x y = [x * y, x + y]
+
+day = sum @[] @Int . map fst . filter (evalExpr $ \x y -> [x * y, x + y])
 
 -- * SECOND problem
-day' = sum @[] @Int . map fst . filter evalExpr'
+exprDay2 x y = pad x y + y : exprDay1 x y
+
+-- Stupid optimisation: the lines which are valid with day1 computation do not need to be checked with day2
+day' = sum @[] @Int . map fst . filter (\x -> evalExpr exprDay2 x)
 
 ex = parseContent [str|\
 190: 10 19
