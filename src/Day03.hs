@@ -1,55 +1,44 @@
 module Day03 where
 
-import Data.Array
-import Text.Regex.TDFA
 import Utils
 import qualified Data.Text as Text
+import Control.Lens.Regex.Text
+import Control.Lens ((^..))
 
 fileContent = $(getFile)
 
 -- * Generics
 
 -- * FIRST problem
-toMul x = 
-        let (a, b) = ( read $
-                    Text.unpack $
-                      fst $
-                        x ! (1 :: Int),
-                  read $ Text.unpack $ fst $ x ! 2
-                )
+toMul [x, y] = 
+        let (a, b) = ( read $ Text.unpack x, read $ Text.unpack y)
         in a * b
+toMul s = error $ show s
 
 
 day :: Text -> Int
-day content = sum $ map (\(a, b) -> a * b) $ 
-  map
-    ( \x ->
-        ( read $
-            Text.unpack $
-              fst $
-                x ! (1 :: Int),
-          read $ Text.unpack $ fst $ x ! 2
-        )
-    )
-    ((content =~ reg) :: [MatchText Text])
+day content = sum $ 
+  map toMul ((content ^.. reg . groups) :: [[Text]])
   where
-    reg = "mul\\(([0-9]+),([0-9]+)\\)" :: Text
+    reg = [regex|mul\(([0-9]+),([0-9]+)\)|]
 
 -- * SECOND problem
 
 day' :: Text -> Int
 day' content = 
-    go 0 True (((content =~ reg) :: [MatchText Text]))
+    go 0 True (((content ^.. reg . groups) :: [[Text]]))
   where
-    reg = "do\\(\\)|don't\\(\\)|mul\\(([0-9]+),([0-9]+)\\)" :: String
+    reg = [regex|(do|don't)\(\)|mul\(([0-9]+),([0-9]+)\)|]
 
     go !acc _enable [] = acc
-    go !acc enable (x:xs) = case fst (x ! 0) of
-       "do()" -> go acc True xs
-       "don't()" -> go acc False xs
-       _
-         | not enable -> go acc enable xs
-         | otherwise -> go (acc + toMul x) enable xs
+    go !acc _enable ([op]:xs) = case Text.unpack op of
+       "do" -> go acc True xs
+       "don't" -> go acc False xs
+       s -> error $ show s
+    go !acc enable (["", x, y]:xs)
+         | not enable = go acc enable xs
+         | otherwise = go (acc + toMul [x, y]) enable xs
+    go !_acc _enable x = error (show x)
 
 
 ex = "xmul(2,4)&mul[3,7]!^don't()_mul(5,5)+mul(32,64](mul(11,8)undo()?mul(8,5))" :: Text

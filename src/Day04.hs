@@ -9,22 +9,19 @@ fileContent = parseContent $(getFile)
 parseContent = parse2DGrid @Char id
 
 -- * Generics
-readWord (x, y) (dx, dy) m = sequenceA $ map (\d -> Map.lookup (x + dx * d, y + dy * d)  m) [1..3]
+readWord pos delta m = sequenceA $ map (\d -> Map.lookup (pos + delta ^* d)  m) [1..3]
 
 -- * FIRST problem
 day content = sum $ do
   (pos, c) <- Map.toList content
   guard $ c == 'X'
-  deltas <- [(1, 0),
-             (-1, 0),
-             (0, 1), (0, -1),
-             (1, 1), (-1, -1), (-1, 1), (1, -1)]
+  deltas <- drop 1 connect8
   case readWord pos deltas content of
     Just "MAS" -> pure 1
     _ -> pure 0
 
-readWord' (x, y) m = sequenceA $ map (\d -> Map.lookup (x + d, y + d)  m) [-1, 1]
-readWord'' (x, y) m = sequenceA $ map (\d -> Map.lookup (x +  d, y - d)  m) [-1, 1]
+readWord' pos m = sequenceA $ map (\d -> Map.lookup (pos + V2 d d)  m) [-1, 1]
+readWord'' pos m = sequenceA $ map (\d -> Map.lookup (pos + V2 d (-d)) m) [-1, 1]
 
 
 -- * SECOND problem

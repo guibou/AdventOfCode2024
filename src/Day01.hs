@@ -6,7 +6,10 @@ import qualified Data.Map.Strict as Map
 
 fileContent = parseContent $(getFile)
 
-parseContent = unzip . fmap (\[x, y] -> (x, y)) . fmap (fmap (read @Int . Text.unpack) . Text.words) . Text.lines
+parseContent = unzip . fmap (\case
+  [x, y] -> (x, y)
+  s -> error (show s)
+  ) . fmap (fmap (read @Int . Text.unpack) . Text.words) . Text.lines
 
 -- * Generics
 

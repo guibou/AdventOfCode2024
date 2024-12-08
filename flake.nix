@@ -61,6 +61,7 @@
           "aeson-pretty"
           "range"
           "regex-tdfa"
+          "lens-regex-pcre"
         ];
 
         extensions = [
