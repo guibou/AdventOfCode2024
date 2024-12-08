@@ -11,11 +11,11 @@ spec :: Spec
 spec = do
   describe "simple examples" $ do
     it "of first star" $ do
-      day ex `shouldBe` 0
+      day ex `shouldBe` 41
     it "of second star" $ do
-      day' ex `shouldBe` 0
+      day' ex `shouldBe` 6
   describe "works" $ do
     it "on first star" $ do
-      day fileContent `shouldBe` 0
+      day fileContent `shouldBe` 5534
     it "on second star" $ do
-      day' fileContent `shouldBe` 0
+      day' fileContent `shouldBe` 2262
