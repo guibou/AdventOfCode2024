@@ -1,19 +1,52 @@
 module Day07 where
 
 import Utils
+import Control.Applicative
+import Control.Monad.Combinators (sepBy)
 
 fileContent = parseContent $(getFile)
 
-parseContent = undefined
+parseContent = unsafeParse $ do
+  some $ do
+    n <- parseNumber
+    ": "
+    res <- some parseNumber
+    "\n"
+    pure (n, res)
 
 -- * Generics
+evalExpr (resValue, numbers) = resValue `elem` possible_values
+  where
+    possible_values = go (reverse numbers)
+    go [x] = [x]
+    go (x:xs) = do
+      res' <- go xs
+      [x * res', x + res']
+
+evalExpr' (resValue, numbers) = resValue `elem` possible_values
+  where
+    possible_values = go (reverse numbers)
+    go [x] = [x]
+    go (x:xs) = do
+      res' <- go xs
+      [x * res', x + res', read (show res' <> show x)]
 
 -- * FIRST problem
-day = undefined
+day = sum . map fst . filter evalExpr
 
 -- * SECOND problem
-day' = undefined
+day' = sum . map fst . filter evalExpr'
 
-ex = undefined
+ex = parseContent [str|\
+190: 10 19
+3267: 81 40 27
+83: 17 5
+156: 15 6
+7290: 6 8 6 15
+161011: 16 10 13
+192: 17 8 14
+21037: 9 7 18 13
+292: 11 6 16 20
+|]
 
--- started at Sun Dec  8 12:09:16 PM +04 2024
+-- started at Sun Dec  8 14:57:32 PM +04 2024
