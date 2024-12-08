@@ -8,15 +8,25 @@ import qualified Data.Set as Set
 
 fileContent = parseContent $(getFile)
 
-parseContent = parse2DGrid (id @Char)
+data Case = Free | Wall
+
+parseContent content = do
+  let
+    charGrid = parse2DGrid (id @Char) content
+    Just guard_position = fst <$> find (\(_, elem) -> elem == '^') (Map.toList charGrid)
+
+    toCase '.' = Free
+    toCase '#' = Wall
+    toCase '^' = Free
+    toCase c = error $ [fmt|{c} is not a valid char for case|]
+  (guard_position, fmap toCase charGrid)
 
 -- * Generics
 
 -- * FIRST problem
 day content = length (Set.fromList $ map fst $ computePath content)
 
-computePath content = do
-  let Just guard_position = fst <$> find (\(_, elem) -> elem == '^') (Map.toList content)
+computePath (guard_position, content) = do
   let current_dir = U
 
   let go !stepCount pos dir = (pos, dir): do
@@ -28,10 +38,8 @@ computePath content = do
              R -> pos + V2 1 0
         case Map.lookup pos' content of
           Nothing -> []
-          Just '.' -> go (stepCount +1) pos' dir
-          Just '#' -> go stepCount pos (turnRight dir)
-          Just '^' -> go (stepCount + 1) pos' dir
-          v -> error (show v)
+          Just Free -> go (stepCount +1) pos' dir
+          Just Wall -> go stepCount pos (turnRight dir)
 
   go (0 :: Int) guard_position current_dir
 
@@ -48,12 +56,12 @@ checkForInfiniteLoop l = go mempty l
       | otherwise = go (Set.insert x known) xs
 
 -- * SECOND problem
-day' content = length $ do
+day' (firstPlace, content) = length $ do
   -- First approximation of nice placments: on the initial path
-  let (firstPlace:freePlaces') = map fst $ computePath content
+  let freePlaces' = map fst $ computePath (firstPlace, content)
   let freePlaces = Set.delete firstPlace (Set.fromList freePlaces')
   freePlace <- (Set.toList freePlaces)
-  let path = computePath (Map.insert freePlace '#' content)
+  let path = computePath (firstPlace, Map.insert freePlace Wall content)
   guard $ checkForInfiniteLoop path
   pure freePlace
 
