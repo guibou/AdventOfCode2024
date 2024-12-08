@@ -48,12 +48,10 @@ turnRight R = D
 turnRight D = L
 turnRight L = U
 
-checkForInfiniteLoop l = go mempty l
+checkForInfiniteLoop l = go l (drop 1 l)
   where 
-    go _ [] = False
-    go known (x:xs)
-      | x `Set.member` known = True
-      | otherwise = go (Set.insert x known) xs
+    go (x:xs) (y:_skipped:ys) = if x == y then True else go xs ys
+    go _ _ = False
 
 -- * SECOND problem
 day' (firstPlace, content) = do
@@ -64,7 +62,7 @@ day' (firstPlace, content) = do
   go 0 mempty firstPath
   where
       go :: Int -> Set (V2 Int) -> [(V2 Int, Direction)] -> Int
-      go acc seenObstacle ((currentPos, currentDir):toto@((nextPos, _nextDir):_))
+      go !acc seenObstacle ((currentPos, currentDir):toto@((nextPos, _nextDir):_))
         -- We won't add an object on the next position if it was the starting one
         -- So this is the normal path, so not a loop, so no increase of the acc
         | nextPos == firstPlace = go acc seenObstacle toto
@@ -74,8 +72,6 @@ day' (firstPlace, content) = do
            -- Here we can insert the obstacle
            let m = Map.insert nextPos Wall content
            let newPath = walkPath m currentPos (turnRight currentDir)
-           -- TODO: maybe we can store the initial path so check for inifinte
-           -- starts with a known prefix
            go (if checkForInfiniteLoop newPath then acc + 1 else acc) (Set.insert nextPos seenObstacle) toto
       go acc _ [_] = acc
       go !_acc _ [] = error "Should not happen"
