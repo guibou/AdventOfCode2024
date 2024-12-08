@@ -26,22 +26,22 @@ parseContent content = do
 -- * FIRST problem
 day content = length (Set.fromList $ map fst $ computePath content)
 
-computePath (guard_position, content) = do
-  let current_dir = U
+computePath (guard_position, content) = walkPath content guard_position U
 
-  let go !stepCount pos dir = (pos, dir): do
+
+walkPath content pos dir = (pos, dir): nextStep pos dir
+  where
+    nextStep pos dir = do
         let 
-          pos' = case dir of
-             U -> pos + V2 0 (-1)
-             D -> pos + V2 0 1
-             L -> pos + V2 (-1) 0
-             R -> pos + V2 1 0
+          pos' = pos + case dir of
+             U -> V2 0 (-1)
+             D -> V2 0 1
+             L -> V2 (-1) 0
+             R -> V2 1 0
         case Map.lookup pos' content of
           Nothing -> []
-          Just Free -> go (stepCount +1) pos' dir
-          Just Wall -> go stepCount pos (turnRight dir)
-
-  go (0 :: Int) guard_position current_dir
+          Just Free -> walkPath content pos' dir
+          Just Wall -> nextStep pos (turnRight dir)
 
 turnRight U = R
 turnRight R = D
@@ -56,14 +56,29 @@ checkForInfiniteLoop l = go mempty l
       | otherwise = go (Set.insert x known) xs
 
 -- * SECOND problem
-day' (firstPlace, content) = length $ do
-  -- First approximation of nice placments: on the initial path
-  let freePlaces' = map fst $ computePath (firstPlace, content)
-  let freePlaces = Set.delete firstPlace (Set.fromList freePlaces')
-  freePlace <- (Set.toList freePlaces)
-  let path = computePath (firstPlace, Map.insert freePlace Wall content)
-  guard $ checkForInfiniteLoop path
-  pure freePlace
+day' (firstPlace, content) = do
+  -- First approximation of obstacle positions: on the initial path
+  let firstPath = computePath (firstPlace, content)
+
+  -- We will then walk this path and add obstacles on it on the next step
+  go 0 mempty firstPath
+  where
+      go :: Int -> Set (V2 Int) -> [(V2 Int, Direction)] -> Int
+      go acc seenObstacle ((currentPos, currentDir):toto@((nextPos, _nextDir):_))
+        -- We won't add an object on the next position if it was the starting one
+        -- So this is the normal path, so not a loop, so no increase of the acc
+        | nextPos == firstPlace = go acc seenObstacle toto
+        -- DO NOT insert an abstacle on a place which was already used for obstacle
+        | nextPos `Set.member` seenObstacle = go acc seenObstacle toto
+        | otherwise = do
+           -- Here we can insert the obstacle
+           let m = Map.insert nextPos Wall content
+           let newPath = walkPath m currentPos (turnRight currentDir)
+           -- TODO: maybe we can store the initial path so check for inifinte
+           -- starts with a known prefix
+           go (if checkForInfiniteLoop newPath then acc + 1 else acc) (Set.insert nextPos seenObstacle) toto
+      go acc _ [_] = acc
+      go !_acc _ [] = error "Should not happen"
 
 ex = parseContent [str|\
 ....#.....
