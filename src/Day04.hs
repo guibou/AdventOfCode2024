@@ -2,7 +2,6 @@ module Day04 where
 
 import Utils
 import qualified Data.Map.Strict as Map
-import Control.Monad (guard)
 
 fileContent = parseContent $(getFile)
 

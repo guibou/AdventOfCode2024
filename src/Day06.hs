@@ -13,7 +13,9 @@ data Case = Free | Wall
 parseContent content = do
   let
     charGrid = parse2DGrid (id @Char) content
-    Just guard_position = fst <$> find (\(_, elem) -> elem == '^') (Map.toList charGrid)
+    guard_position = case fst <$> find (\(_, elem) -> elem == '^') (Map.toList charGrid) of
+       Nothing -> error "No guard position in the input data"
+       Just v -> v
 
     toCase '.' = Free
     toCase '#' = Wall

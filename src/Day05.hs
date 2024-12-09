@@ -4,7 +4,6 @@ import Utils
 import Control.Applicative
 import Text.Megaparsec (sepBy)
 import qualified Data.Set as Set
-import Control.Monad (void)
 
 fileContent :: ([(Int, Int)], [[Int]])
 fileContent = parseContent $(getFile)

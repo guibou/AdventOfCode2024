@@ -1,7 +1,6 @@
 module Day08 where
 
 import Utils
-import Control.Monad
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 
@@ -20,7 +19,7 @@ day content = length $ do
   Set.filter (\p -> Map.member p content) $ Set.fromList $ concatMap buildAntiNodes (Map.toList antennas)
 
 buildAntiNodes :: (Char, [V2 Int]) -> [V2 Int]
-buildAntiNodes (name, positions) = do
+buildAntiNodes (_name, positions) = do
   (a, a') <- buildPairs positions
   -- compute the position of both antinodes
   let delta = a' - a
@@ -39,8 +38,8 @@ day' content = length $ do
          pure (antenna, [pos])
   Set.filter (\p -> Map.member p content) $ Set.fromList $ concatMap (buildAntiNodes' content) (Map.toList antennas)
 
-buildAntiNodes' :: _ -> (Char, [V2 Int]) -> [V2 Int]
-buildAntiNodes' content (name, positions) = do
+buildAntiNodes' :: Map (V2 Int) a -> (Char, [V2 Int]) -> [V2 Int]
+buildAntiNodes' content (_name, positions) = do
   (a, a') <- buildPairs positions
   -- compute the position of all antinodes by just walking in both direction indefinitely
   let delta = a' - a
