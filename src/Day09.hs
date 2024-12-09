@@ -3,6 +3,10 @@ module Day09 where
 
 import Utils
 import qualified Data.Text as Text
+import qualified Data.Map.Strict as Map
+import qualified Data.Set as Set
+import Data.List (minimumBy)
+import Data.Ord (comparing)
 
 fileContent = parseContent $(getFile)
 
@@ -64,41 +68,68 @@ streamIdx' ((Block size (Data idx)):xs) = replicate size idx <> streamIdx' xs
 streamIdx' ((Block size Free):xs) = replicate size 0 <> streamIdx' xs
 
 -- * SECOND problem
-day' input = sum $ zipWith (*) [0..] (streamIdx' (compact' (toBlock 0 input)))
+day' input = sum $ map weight $ Map.toList (compact' (toBlock 0 input))
 
-compact' :: [Block] -> [Block]
-compact' input = go input reversed
+weight :: (Int, (Int, Int)) -> Int
+weight (offset, (size, idx)) = idx * sum [offset..offset + size - 1]
+
+toOffseted :: [Block] -> [(Int, Block)]
+toOffseted blocks = go 0 blocks
   where
-    l = sum $ map getDataSize input
-    reversed = reverse input
+    go !offset v = case v of
+         [] -> []
+         b@(Block size _):vs -> (offset, b):go (offset + size) vs
 
-    -- We tried all the blocks
-    go current [] = current
+compact' :: [Block] -> _
+compact' input = go dataBlocks freeBlocks blocks_to_reinsert
+  where
+    offseted = toOffseted input
+    dataBlocks = Map.fromList $ do
+      (offset, block) <- offseted
+      case block of
+        Block size Free -> []
+        Block size (Data dt) -> [(offset, (size, dt))]
 
-    -- Do not try to reinsert Free
-    go current ((Block _size Free):ys) = go current ys
-    go current (b@(Block _size (Data _idx)):ys) = go (reinsert b current) ys
+    freeBlocks = fmap Set.fromList $ Map.fromListWith (++) $ do
+      (offset, block) <- offseted
+      case block of
+        Block size Free -> [(size, [offset])]
+        Block size (Data dt) -> []
 
-    reinsert (Block _size Free) _current = error "YOU SHOULD NOT REINSERT FREE BLOCK"
-    reinsert (Block size (Data idx)) current = go current
-      where
-        go [] = [] 
-        go (b@(Block size' Free):ys)
-          -- We cannot reinsert here
-          | size' < size = b:go ys
-          -- We can reinsert here
-          | otherwise = (Block size (Data idx)):Block (size' - size) Free:removeBlock idx ys
-        go (b@(Block size' (Data idx')):ys)
-          -- Found the same block, we can stop here, it was not reinserted
-          | idx' == idx = b:ys
-          -- Skipping this block
-          | otherwise = b:go ys
+    blocks_to_reinsert = reverse $ Map.toList dataBlocks
 
-removeBlock  idx [] = []
-removeBlock  idx (b@(Block size Free):ys) = b:removeBlock idx ys
-removeBlock  idx (b@(Block size (Data idx')):ys)
-  | idx == idx' = Block size Free:ys
-  | otherwise = b:removeBlock idx ys
+    go :: Map Int (Int, Int) -> Map Int (Set Int) -> [(Int, (Int, Int))] -> Map Int (Int, Int)
+    go dataBlocks freeBlocks [] = dataBlocks
+    go dataBlocks (Map.filter (not . null) -> freeBlocks) ((currentOffset, (size, dt)):xs) = do
+      -- Find a freeblock which size is bigger
+      let freeBlockSizes = filter (>= size) $ Map.keys freeBlocks
+      case freeBlockSizes of
+        -- There is no available free block for this
+        [] -> go dataBlocks freeBlocks xs
+        _ -> do
+           let closerFreeBlockSize = minimumBy (comparing (\k -> (Set.elemAt 0 (freeBlocks Map.! k)))) freeBlockSizes
+           let freeBlockOffset = Set.elemAt 0 (freeBlocks Map.! closerFreeBlockSize)
+
+           if freeBlockOffset >= currentOffset
+           -- We fall in the SAME place, or after, that's not a good idea
+           then go dataBlocks freeBlocks xs
+           else do
+             -- We need to remove the freeBlock from the list of freeBlocks
+             let freeBlocks' = Map.insert closerFreeBlockSize (Set.drop 1 $ freeBlocks Map.! closerFreeBlockSize) freeBlocks
+             -- We remove the block from the previous position and insert it an the next position
+             let dataBlocks' = Map.insert freeBlockOffset (size, dt) (Map.delete currentOffset dataBlocks)
+             -- We need to reinsert the freeBlock IF not null
+                 freeBlocks'' = if closerFreeBlockSize == size
+                                then freeBlocks'
+                                else do
+                                   let newFreeSize = closerFreeBlockSize - size
+                                   let newFreeOffset = freeBlockOffset + size
+                                   Map.insert newFreeSize (Set.insert newFreeOffset (freeBlocks' Map.! newFreeSize)) freeBlocks'
+
+
+             -- We need to 
+             go dataBlocks' freeBlocks'' xs
+
 
 
 ex = "2333133121414131402"
