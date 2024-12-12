@@ -32,7 +32,7 @@ main = do
     layout_title .= "Advent of code 2023 - Time elapsed (ms)"
     layout_title_style . font_size .= 10
     layout_x_axis . laxis_generate .= autoIndexAxis (map (take 5) $ map Text.unpack $ Map.keys flattened)
-    plot (fmap plotBars $ bars ["First star", "Second star", "Cumul"] (addIndexes (map (\x -> Map.elems x <> [sum $ Map.elems x]) $ Map.elems flattened)))
+    plot (fmap plotBars $ bars ["First star", "Second star"] (addIndexes (map (\x -> Map.elems x) $ Map.elems flattened)))
 
   -- Encode to json, and add the sum of all runs
   let all = sum $ map (sum . Map.elems) $ Map.elems flattened
