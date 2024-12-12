@@ -116,6 +116,7 @@
             {
 
               besout = unmarkBroken (doJailbreak hprev.besout);
+              #union-find = unmarkBroken (doJailbreak hprev.union-find);
 
             }
         );
