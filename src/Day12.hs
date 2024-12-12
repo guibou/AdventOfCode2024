@@ -3,9 +3,8 @@ module Day12 where
 
 import Utils
 import qualified Data.Set as Set
-import Data.List (foldl')
 import qualified Data.Map.Strict as Map
-import Debug.Trace
+import qualified Data.Text as Text
 
 fileContent = parseContent $(getFile)
 
@@ -18,6 +17,7 @@ day m = sum $ do
   let regions = growRegions m
   map (weightRegion m) (map Set.toList $ Map.elems regions.groups')
 
+weightRegion _m [] = 0
 weightRegion m items@(s:_) = do
   let area = length items
   let currentPlant = m Map.! s
@@ -30,13 +30,6 @@ weightRegion m items@(s:_) = do
       Just plant'
         | plant' == currentPlant -> pure 0
         | otherwise -> pure 1))
-
-debug m = do
-  let regions = (growRegions m).groups'
-  let summary = fmap (\x -> (length x, sum x)) $ Map.fromListWith (<>) $ do
-        (Set.toList -> items) <- Map.elems regions
-        pure (m Map.! head items, [length items])
-  summary
 
 growRegions m = go emptySuf (Map.toList m)
   where
@@ -128,56 +121,51 @@ day' m = do
   sum $ do
     region <- map Set.toList $ Map.elems regions.groups'
     let area = length region
-    let sides = sum $ map snd $ countSides (Set.fromList region)
-    pure (area * sides)
+    let corners = countCorners $ regionToBorderSegments (Set.fromList region)
+    -- let sides = sum $ map snd $ countSides (Set.fromList region)
+    pure (area * corners)
     
+--- From a region, returns the list of the border segments
+regionToBorderSegments :: Set (V2 Int) -> [(V2 Int, V2 Int)]
+regionToBorderSegments plants = map fst $ filter (\(_pos, count) -> count == 1) $ Map.toList $ Map.fromListWith (+) $ map (, 1 :: Int) $ do
+  plant <- Set.toList plants
+  -- Generate the 4 corners around the plant
+  let tl = plant
+      tr = plant + V2 1 0
+      bl = plant + V2 0 1
+      br = bl + V2 1 0
+  -- Generates the 4 segments around the plant
+  -- Note the order, left to right, top to bottom, to ensure correct merge
+  [ (tl, tr), -- Top
+    (tl, bl), -- Left
+    (bl, br), -- Bottom
+    (tr, br) -- Right
+   ]
 
-finish :: [(Int, [(a, Int)])] -> Int
-finish = sum . map (\(x, y) -> x * sum (map snd y))
+countCorners :: [(V2 Int, V2 Int)] -> Int
+countCorners edges = do
+  let pairedEdges = Map.fromListWith (++) $ do
+              (p0, p1) <- edges
+              [(p0, [p1]), (p1, [p0])]
+  sum $ map isCorner $ Map.toList $ pairedEdges
+  -- pairedEdges
 
-getBorder m items@(s:_) = do
-  let area = length items
-  let currentPlant = m Map.! s
-  let border = do
-        i <- items
-        neightboor <- drop 1 connect8
-        let i' = i + neightboor
-        case Map.lookup i' m of
-          Nothing -> pure i'
-          Just plant'
-            | plant' == currentPlant -> []
-            | otherwise -> pure i'
-  Set.fromList $ border
+isCorner :: (V2 Int, [V2 Int]) -> Int
+isCorner (centerPoint, [a, b]) = do
+  let
+    da = a - centerPoint
+    db = b - centerPoint
+  if da /= -db then 1 else 0
+-- Special case:
+--    |
+--   -o-
+--    |
+--
+--  That's always 2 corners
+isCorner (_centerPoint, _) = 2
 
-partitionConnected :: Set (V2 Int) -> _
-partitionConnected elems = go emptySuf (Set.toList elems)
-  where
-    go suf [] = suf
-    go suf (x:xs) = do
-      let neightboors = filter (`Set.member` elems) $ map (x+) $ drop 1 $ connect4
-      if null neightboors
-      then go (insertInNewGroup x suf) xs
-      else go (foldl' (\suf x' -> insertInSameGroup x x' suf) suf neightboors) xs
-
-countSides :: Set (V2 Int) -> [(V2 Int, Int)]
-countSides itemsSet
-  | length itemsSet == 1 = [(head $ Set.toList itemsSet, 4 :: Int)]
-  | otherwise = do
-   i <- Set.toList itemsSet
-   pure $ (countCorners itemsSet i)
-
-countCorners itemSet item = (item, ) $ do
-  let possibleNeighbors = filter (\n -> Set.member n itemSet) $ map (\d -> item + d) $ drop 1 connect4
-  case possibleNeighbors of
-    [a, b] -> do
-      let d = abs (a - b)
-      case d of
-        V2 0 2 -> 0
-        V2 2 0 -> 0
-        _ -> 1
-    [x] -> 2
-    [a, b, c] -> traceShow "YOTO" 2
-    what -> error (show (what, item, itemSet))
+red t = "\ESC[31;1;4m" <> t <> "\ESC[0m"
+redC c = red (Text.singleton c)
 
 ex = parseContent [str|\
 RRRRIICCFF
@@ -208,91 +196,3 @@ EEEC
 |]
 
 -- started at Thu Dec 12 09:14:58 AM +04 2024
---
--- 1461802 is too low!
---
---
-{-
- -
- - That one has 1 corner
- -    *-*
-      | |
-      | +_
-      |
-
-       Y
-       +X
-       Z
-Entrance and exit are not
-
- RRRRIICCFF
-....RIICCCF
-.VV.RRCCFFF
-.VV...CJFFF
-.VVVV.JJCFE
-.VV.V.CJJEE
-.VV...CJJEE
-....IIIJJEE
- MIIISIJEEE
- MMMISSJEEE
-
-RRRRIICCFF
-RRRRIICCCF
-VVRRRCCFFF
-VVRCCCJFFF
-VVVVCJJCFE
-VV.VCCJJEE
-VVI.ICJJEE
-MI.IIIJJEE
-MIIISIJEEE
-MMMISSJEEE
-
-
-that one has two
-
-    |
-  *-+
-  *-+
-    |
-
-    X
-   Yo
-    Z
-
-     1001
-     0..11
-    11...0
-  101..101
-  0...11
-  11.22.
-   0..0
-   11.0
-    101
-    
-
-XX
-Xb
-XX
-entrance and exit are on the same path
-
--}
-{-
-([],V2 16 31,fromList [V2 (-1) 22,V2 (-1) 23,V2 (-1) 24,V2 (-1) 25,V2 (-1) 26,V2 (-1) 27,V2 (-1) 28,V2 (-1) 29,V2 0 22,V2 0 29,V2 0 30,V2 1 22,V2 1 30,V2 2 22,V2 2 29,V2 2 30,V2
- 3 22,V2 3 30,V2 3 31,V2 4 22,V2 4 31,V2 4 32,V2 4 33,V2 4 34,V2 5 22,V2 5 23,V2 5 24,V2 5 34,V2 5 35,V2 6 23,V2 6 26,V2 6 27,V2 6 35,V2 7 23,V2 7 24,V2 7 25,V2 7 26,V2 7 27,V2 7 28,V2 7 29,V2
- 7 30,V2 7 35,V2 8 29,V2 8 30,V2 8 35,V2 9 29,V2 9 35,V2 10 28,V2 10 29,V2 10 30,V2 10 35,V2 11 28,V2 11 30,V2 11 35,V2 12 26,V2 12 27,V2 12 28,V2 12 34,V2 12 35,V2 13 26,V2 13 35,V2 13 36,V2 
-14 26,V2 14 27,V2 14 28,V2 14 36,V2 15 28,V2 15 35,V2 15 36,V2 16 28,V2 16 31,V2 16 34,V2 16 35,V2 17 28,V2 17 34,V2 18 28,V2 18 33,V2 18 34,V2 19 28,V2 19 29,V2 19 32,V2 19 33,V2 20 29,V2 20 
-30,V2 20 31,V2 20 32])
--}
-
-
-{-
-
-Patterns of adjacency cells:
-
-XXX
-ooo  -
-XXX
-
--}
-
-
