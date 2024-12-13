@@ -62,6 +62,7 @@
           "range"
           "regex-tdfa"
           "lens-regex-pcre"
+          "sbv"
         ];
 
         extensions = [
@@ -117,6 +118,7 @@
 
               besout = unmarkBroken (doJailbreak hprev.besout);
               #union-find = unmarkBroken (doJailbreak hprev.union-find);
+              sbv = dontCheck (unmarkBroken (doJailbreak hprev.sbv));
 
             }
         );

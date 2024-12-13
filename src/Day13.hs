@@ -1,8 +1,14 @@
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE OverloadedRecordDot #-}
 module Day13 where
 
 import Utils
 import Control.Applicative (some)
+import Debug.Trace (traceShow)
+import Data.SBV
+import Data.SBV.Internals (SMTModel (modelAssocs), CVal (..), CV (cvVal))
+import qualified Data.Map.Strict as Map
+import Data.Maybe (catMaybes)
 
 fileContent = parseContent $(getFile)
 
@@ -19,26 +25,26 @@ data Machine = Machine {
 parseBehavior = do
   a <- parseButton "A"
   b <- parseButton "B"
-  "Prize: X="
+  void "Prize: X="
   x <- parseNumber
-  ", Y="
+  void ", Y="
   y <- parseNumber
-  "\n"
-  "\n"
+  void "\n"
+  void "\n"
   pure $ Machine a b (V2 x y)
 
 parseButton label = do
-  "Button "
-  label
-  ": X+"
+  void "Button "
+  void label
+  void ": X+"
   x <- parseNumber
-  ", Y+"
+  void ", Y+"
   y <- parseNumber
-  "\n"
+  void "\n"
   pure $ V2 x y
 
 -- * Generics
-solveMachine :: Machine -> _
+solveMachine :: Machine -> [(Int, (Int, Int))]
 solveMachine Machine{..} = do
   aPress <- [0..100]
   bPress <- [0..100]
@@ -47,14 +53,42 @@ solveMachine Machine{..} = do
   let cost = aPress * 3 + bPress * 1
   pure (cost, (aPress, bPress))
 
-foo [] = 0
-foo l = minimum l
+optimiseMachine :: Machine -> IO OptimizeResult
+optimiseMachine Machine{prize = V2 prizeX prizeY,
+                      buttonA = V2 buttonAX buttonAY,
+                      buttonB = V2 buttonBX buttonBY} = optimize Lexicographic $ do
+
+  aPress <- sInteger "aPress"
+  bPress <- sInteger "bPress"
+
+  constrain $ aPress * fromIntegral buttonAX + bPress * fromIntegral buttonBX .== fromIntegral prizeX
+  constrain $ aPress * fromIntegral buttonAY + bPress * fromIntegral buttonBY .== fromIntegral prizeY
+
+  minimize "tokens" $ aPress * 3 + bPress * 1
+ 
+solveMachineSBV m = do
+  res <- optimiseMachine m
+  case res of
+    LexicographicResult (Satisfiable _ model) -> pure $ Just $ cvIntToInteger $ (cvVal (Map.fromList (modelAssocs model) Map.! "tokens"))
+    _ -> pure Nothing
+
+pickMinimumWeight [] = 0
+pickMinimumWeight [x] = x
+pickMinimumWeight l = traceShow (length l) $ minimum l
 
 -- * FIRST problem
-day machines = sum $ map (foo . map fst) $ map solveMachine machines
+day machines = sum $ map (pickMinimumWeight . map fst) $ map solveMachine machines
+
+upPrice m = m { prize = m.prize + (fromIntegral @Int 10000000000000) }
+upPrices = map upPrice
+
+cvIntToInteger (CInteger i) = i
+cvIntToInteger _ = error "I know that I have integer"
+
 
 -- * SECOND problem
-day' = undefined
+day' :: [Machine] -> IO Integer
+day' machines = (sum . catMaybes) <$> mapM solveMachineSBV (upPrices machines)
 
 ex = parseContent [str|\
 Button A: X+94, Y+34
@@ -76,3 +110,30 @@ Prize: X=18641, Y=10279
 |]
 
 -- started at Fri Dec 13 08:57:25 AM +04 2024
+{-
+
+ pX = a * aX + b * bX
+ pY = a * aY + b * bY
+ 
+ a et b?
+
+ 
+
+
+ pX = a * aX + b * bX
+ 
+ a = (pX - b * bX) / aX
+
+ (on inject)
+ pY = a * aY + b * bY
+ pY = aY * (pX - b * bX) / aX + b * bY
+
+ pY - aY * pX / aX = b (bY - aY * bX / aX)
+
+ b = (pY - aY * pX) / (bY - aY * bX / aX)
+
+-}
+
+
+
+
