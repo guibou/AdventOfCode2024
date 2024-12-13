@@ -15,9 +15,9 @@ spec = do
     it "of second star" $ do
       -- We don't have this value in AoC reference, but we computed it, so let's
       -- keep it for test
-      day' ex `shouldReturn` 875318608908
+      day' ex `shouldBe` 875318608908
   describe "works" $ do
     it "on first star" $ do
       day fileContent `shouldBe` 29436
     it "on second star" $ do
-      day' fileContent `shouldReturn` 103729094227877
+      day' fileContent `shouldBe` 103729094227877

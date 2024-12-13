@@ -8,7 +8,6 @@
 
 module Utils
   ( module Utils,
-    module Relude.Extra,
     Vector,
     module Data.Function.Memoize,
     module Linear,
