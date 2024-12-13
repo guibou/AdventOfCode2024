@@ -1,10 +1,7 @@
-{-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE OverloadedRecordDot #-}
 module Day13 where
 
 import Utils
 import Control.Applicative (some)
-import Control.Lens
 
 fileContent = parseContent $(getFile)
 
@@ -50,11 +47,11 @@ solveMachine Machine{..} = do
   -- pX * aY - pY * aX = bPress * (bX * aY - bY * aX)
   --
   -- ==> bPress = (pX * aY - pY * aX) / (bX * aY - bY * aX)
-  let (bPress, bMod) = (prize ^. _x * buttonA ^. _y - prize ^. _y * buttonA ^. _x) `divMod` (buttonB ^. _x * buttonA ^. _y - buttonB ^. _y * buttonA ^. _x)
+  let (bPress, bMod) = (prize.x * buttonA.y - prize.y * buttonA.x) `divMod` (buttonB.x * buttonA.y - buttonB.y * buttonA.x)
   guard (bMod == 0)
   --
   -- aPress = (pX - bPress * bX) / aX
-  let (aPress, aMod) = (prize ^. _x - bPress * buttonB ^. _x) `divMod` (buttonA ^. _x)
+  let (aPress, aMod) = (prize.x - bPress * buttonB.x) `divMod` (buttonA.x)
   guard (aMod == 0)
   
   guard $ aPress *^ buttonA + bPress *^ buttonB == prize

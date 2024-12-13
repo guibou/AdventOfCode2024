@@ -91,6 +91,7 @@
           "NoFieldSelectors"
           "DuplicateRecordFields"
           "OverloadedRecordDot"
+          "RecordWildCards"
         ];
 
         flags = (builtins.map (e: "-X${e}") extensions)

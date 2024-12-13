@@ -5,6 +5,7 @@
 {-# HLINT ignore "Redundant bracket" #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 {-# HLINT ignore "Replace case with fromMaybe" #-}
+{-# LANGUAGE DataKinds #-}
 
 module Utils
   ( module Utils,
@@ -72,6 +73,7 @@ import Text.Megaparsec
 import Text.Megaparsec.Char
 import Text.Megaparsec.Char.Lexer qualified as L
 import GHC.Stack
+import GHC.Records
 
 -- So I can use it in the shell
 -- dayX <$$> content
@@ -275,3 +277,18 @@ unsafeSplitOn2 needle t = case Text.splitOn needle t of
 instance (Eq k, Hashable k) => MapLike (HashMap.HashMap k v) k v where
   lookup = HashMap.lookup
   add = HashMap.insert
+
+instance HasField "x" (V2 a) a where
+  getField (V2 x _) = x
+
+instance HasField "y" (V2 a) a where
+  getField (V2 _ y) = y
+
+instance HasField "x" (V3 a) a where
+  getField (V3 x _ _) = x
+
+instance HasField "y" (V3 a) a where
+  getField (V3 _ y _) = y
+
+instance HasField "z" (V3 a) a where
+  getField (V3 _ _ z) = z
