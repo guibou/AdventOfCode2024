@@ -2,11 +2,12 @@ module Direction where
 
 import Utils
 import Text.Megaparsec
+import GHC.Generics (Generic)
 
 -- This module helps parsing working with directions on a 2D grid
 
 data Direction = North | East | South | West
-  deriving (Show, Enum, Bounded, Eq, Ord)
+  deriving (Show, Enum, Bounded, Eq, Ord, Hashable, Generic)
 
 pattern U, D, L, R :: Direction
 pattern U = North
