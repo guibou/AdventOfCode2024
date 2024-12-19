@@ -4,7 +4,6 @@ import Utils
 import qualified Data.Vector as Vector
 import Data.Bits (xor)
 import Data.List
-import Debug.Trace
 
 data Computer = Computer {
    registerA :: Int,
@@ -60,6 +59,7 @@ run computer
         let numerator = computer.registerA
         let denominator = 2 ^ (combo computer operand)
         run (computer { registerC = numerator `div` denominator, pc = computer.pc + 2 })
+      _ -> error $ "Instruction not found:" <> show instruction
 
 day computer = intercalate "," (map show $ run computer)
 
@@ -75,9 +75,12 @@ combo computer val = case val of
   5 -> computer.registerB
   6 -> computer.registerC
   7 -> error "reserved"
+  _ -> error $ "Invalid combo value: " <> show val
 
 -- * SECOND problem
-day' computer = find (\newA -> run (computer { registerA = newA }) == program) [0..]
+day' = undefined --
+
+bruteForce computer = find (\newA -> run (computer { registerA = newA }) == program) [0..]
   where
     program = Vector.toList computer.program
 

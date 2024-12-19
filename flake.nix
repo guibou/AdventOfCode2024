@@ -149,7 +149,7 @@
               cp -r ${./tests}/* tests
 
               mkdir -p $out/bin
-              ghc -O2 -threaded -rtsopts -with-rtsopts=-N ${toString flags} tests/Discover.hs ${mainFile} -o $out/bin/${name}
+              ghc --make -j -O2 -threaded -rtsopts -with-rtsopts=-N ${toString flags} tests/Discover.hs ${mainFile} -o $out/bin/${name}
             '';
       in
       {

@@ -10,16 +10,16 @@ fileContent = parseContent $(getFile)
 
 parseContent content = do
   let grid = Map.toList $ parse2DGrid (id @Char) content
-  let [(start, _)] = filter (\(_pos, v) -> v == 'S') $ grid
-  let [(end, _)] = filter (\(_pos, v) -> v == 'E') $ grid
-  let walls = Set.fromList $ map fst $ filter (\(pos, v) -> v == '#') $ grid
+  let start = head $ map fst $ filter (\(_pos, v) -> v == 'S') $ grid
+  let end = head $ map fst $ filter (\(_pos, v) -> v == 'E') $ grid
+  let walls = Set.fromList $ map fst $ filter (\(_pos, v) -> v == '#') $ grid
   (start, end, walls)
 
 -- * Generics
 
 
 -- * FIRST problem
-day (start, end, walls) = shortestPath
+day (start, end, walls) = fst <$> shortestPath
                 transitionFunction
                 (+)
                 (start, East)

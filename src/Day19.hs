@@ -1,16 +1,14 @@
 module Day19 where
 
 import Utils
-import Control.Applicative
-import Control.Applicative.Combinators (choice)
-import Text.Megaparsec.Char (char)
 import qualified Data.Text as Text
-import Control.Monad.Fix (fix)
 
 fileContent = parseContent $(getFile)
 
 parseContent t = do
-  let (towels:_:designs) = Text.lines t
+  let (towels, designs) = case Text.lines t of
+        (towels:_:designs) -> (towels, designs)
+        _ -> error $ "File not correctly formatted"
   (map Text.unpack $ Text.splitOn ", " towels, map Text.unpack designs)
 
 -- * Generics

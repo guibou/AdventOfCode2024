@@ -4,8 +4,6 @@ import Utils
 import Control.Applicative (some)
 import Path (shortestPath)
 import qualified Data.Set as Set
-import Data.List
-import Debug.Trace (traceShowId, traceShow)
 
 fileContent = (V2 (70 :: Int) 70, parseContent $(getFile))
 
@@ -15,7 +13,9 @@ parseContent = unsafeParse $ do
 -- * Generics
 
 -- * FIRST problem
-day simulated (bounds, corrupted) = shortestPath @_ @Int
+day bounds problem = fst <$> findPath bounds problem
+
+findPath simulated (bounds, corrupted) = shortestPath @_ @Int
    transitionFunction
    (+)
    (V2 0 0)
@@ -37,7 +37,7 @@ day' (bounds, corrupted) = go 0 (length corrupted)
       | minBound + 1 == maxBound = (corrupted !! minBound)
       | otherwise = do
          let currentBound = (minBound + maxBound) `div` 2
-         if day currentBound (bounds, corrupted) == Nothing
+         if findPath currentBound (bounds, corrupted) == Nothing
          then go minBound currentBound
          else go currentBound maxBound
 

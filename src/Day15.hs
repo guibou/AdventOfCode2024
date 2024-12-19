@@ -7,7 +7,6 @@ import qualified Data.Set as Set
 import GHC.Generics
 import Direction
 import Data.List (foldl')
-import Debug.Trace
 
 fileContent = parseContent $(getFile)
 
@@ -31,7 +30,9 @@ parseContent t = do
   let
     walls = Set.fromList $ map fst $ filter (\(_pos, c) -> c == '#') $ gridList
     boxes = Set.fromList $ map fst $ filter (\(_pos, c) -> c == 'O') $ gridList
-    [robot] = map fst $ filter (\(_pos, c) -> c == '@') $ gridList
+    robot = case map fst $ filter (\(_pos, c) -> c == '@') $ gridList of
+      [robot] -> robot
+      _ -> error "Robot not found in problem"
 
   (World{..}, map toDir $ filter (/= '\n') $ Text.unpack $ instructions)
 
