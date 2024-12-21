@@ -12,6 +12,7 @@ module Utils
     Vector,
     module Data.Function.Memoize,
     module Linear,
+    module Debug.Trace,
     here,
     hereLit,
     chunksOf,
@@ -30,7 +31,8 @@ module Utils
     (<$),
 
     -- * Nice reexport
-    void, guard
+    void, guard,
+    some, many
   )
 where
 
@@ -69,10 +71,12 @@ import PyF
 import Relude.Extra
 import Relude.Unsafe qualified as Unsafe
 import Safe (readMay)
-import Text.Megaparsec
+import Text.Megaparsec hiding (many, some)
 import Text.Megaparsec.Char
 import Text.Megaparsec.Char.Lexer qualified as L
 import GHC.Stack
+import Debug.Trace
+import Control.Applicative (some, many)
 import GHC.Records
 
 -- So I can use it in the shell

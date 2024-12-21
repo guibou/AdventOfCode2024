@@ -1,7 +1,6 @@
 module Day18 where
 
 import Utils
-import Control.Applicative (some)
 import Path (shortestPath)
 import qualified Data.Set as Set
 

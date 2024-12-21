@@ -4,7 +4,10 @@ import Utils
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import Direction
-import Path (shortestPath)
+import Path (shortestPaths, buildPath)
+import Data.Maybe (fromJust)
+import qualified Data.HashMap.Strict as HM
+import Data.Foldable (foldl')
 
 fileContent = parseContent $(getFile)
 
@@ -19,7 +22,8 @@ parseContent content = do
 
 
 -- * FIRST problem
-day (start, end, walls) = fst <$> shortestPath
+day content@(start, end, _) = fst $ fromJust $ buildPath (start, East) (\(p, _) -> p == end) $ (fmap (\(w, s) -> (w, Set.elemAt 0 s))) (findPath content)
+findPath (start, end, walls) = shortestPaths
                 transitionFunction
                 (+)
                 (start, East)
@@ -48,7 +52,20 @@ rotateLeft North = West
 rotateLeft s = pred s
 
 -- * SECOND problem
-day' = undefined
+day' content@(start, end, _) = do
+  let toto = findPath content
+      go :: (V2 Int, Direction) -> Set (V2 Int, Direction) -> Set (V2 Int, Direction)
+      go current done
+           | current `Set.member` done = done
+           | current == (start, East) = Set.insert (start, East) done
+           | otherwise = case HM.lookup current toto of
+                    Nothing -> done
+                    Just cr -> foldl' (\done next -> go next done) (Set.insert current done) (snd cr)
+
+  let done' = Set.unions $ do
+         d <- [minBound..maxBound]
+         pure $ go (end, d :: Direction) mempty
+  length $ Set.map fst done'
 
 ex = parseContent [str|\
 ###############
@@ -67,5 +84,27 @@ ex = parseContent [str|\
 #S..#.....#...#
 ###############
 |]
+
+ex' = parseContent [str|
+#################
+#...#...#...#..E#
+#.#.#.#.#.#.#.#.#
+#.#.#.#...#...#.#
+#.#.#.#.###.#.#.#
+#...#.#.#.....#.#
+#.#.#.#.#.#####.#
+#.#...#.#.#.....#
+#.#.#####.#.###.#
+#.#.#.......#...#
+#.#.###.#####.###
+#.#.#...#.....#.#
+#.#.#.#####.###.#
+#.#.#.........#.#
+#.#.#.#########.#
+#S#.............#
+#################
+|]
+
+-- 631 is too high!
 
 -- started at Thu Dec 19 11:17:07 AM +04 2024

@@ -2,6 +2,8 @@
 module Path
   (shortestPath
   , shortestPathAll
+  , shortestPaths
+  , buildPath
   )
 where
 
@@ -13,6 +15,8 @@ import Data.Foldable ( minimumBy, foldl' )
 import Data.HashMap.Strict (HashMap)
 import Data.HashSet (HashSet)
 import Data.Ord (comparing)
+import qualified Data.Set as Set
+import Data.Set (Set)
 
 -- | find the shortest path in a graph
 dijkstra ::
@@ -21,10 +25,10 @@ dijkstra ::
   -> (w -> w -> w) -- ^ weight combination function, usually (+) for distances
   -> v -- ^ starting vertex
   -> Maybe (v -> Bool) -- ^ end vertex
-  -> HashMap v (w, v) -- ^ associate a vertex *v* with its weight from the starting vertex and its previous vertex
+  -> HashMap v (w, Set v) -- ^ associate a vertex *v* with its weight from the starting vertex and its previous vertex
 dijkstra getNext combineWeight start endM = go (Queue.singleton 0 start) HashMap.empty HashSet.empty
   where
-    go :: Queue.MinPQueue w v -> HashMap v (w, v) -> HashSet v -> HashMap v (w, v)
+    go :: Queue.MinPQueue w v -> HashMap v (w, Set v) -> HashSet v -> HashMap v (w, Set v)
     go queue prevs done =
       case Queue.minViewWithKey queue of
         Nothing -> prevs
@@ -42,12 +46,13 @@ dijkstra getNext combineWeight start endM = go (Queue.singleton 0 start) HashMap
               -- update prevs
               upPrevs = HashMap.fromList (map (\(weight, v) -> (v, (weight, currentPoint))) nextPriority)
 
-              fUnion p0@(weight, _) p1@(weight', _)
-                | weight <= weight' = p0
+              fUnion p0@(weight, s) p1@(weight', s')
+                | weight < weight' = p0
+                | weight == weight' = (weight, s <> s')
                 | otherwise = p1
-              in go queue'' (HashMap.unionWith fUnion prevs upPrevs) (HashSet.insert currentPoint done)
+              in go queue'' (HashMap.unionWith fUnion prevs (fmap (\(w, v) -> (w, Set.singleton v)) upPrevs)) (HashSet.insert currentPoint done)
 
--- | find the shortest path in a graph between two nodes. It ends computation once the node is found
+-- | Find the shortest path in a graph between two nodes. It ends computation once the node is found
 shortestPath ::
   forall v w. (Hashable v, Show w, Ord v, Ord w, Num w)
   => (v -> [(w, v)]) -- ^ transition function frow vertex *v* to new vertices associated with weight *w*.
@@ -57,7 +62,18 @@ shortestPath ::
   -> Maybe (w, [v]) -- ^ the list of vertices of the path associated with the weight
 shortestPath getNext combineWeight start endF = let
   d = dijkstra getNext combineWeight start (Just endF)
-  in buildPath start (endF) d
+  in buildPath start (endF) (fmap (\(w, s) -> (w, Set.elemAt 0 s)) d)
+
+shortestPaths ::
+  forall v w. (Hashable v, Show w, Ord v, Ord w, Num w, Show v)
+  => (v -> [(w, v)]) -- ^ transition function frow vertex *v* to new vertices associated with weight *w*.
+  -> (w -> w -> w) -- ^ weight combination function, usually (+) for distances
+  -> v -- ^ starting vertex
+  -> (v -> Bool) -- ^ ending function
+  -> (HashMap v (w, Set v))
+shortestPaths getNext combineWeight start endF = let
+  d = dijkstra getNext combineWeight start (Just endF)
+  in d
 
 -- | Find the shortest paths between two nodes.
 -- This function can be more efficient than `shortestPath` if you want
@@ -76,7 +92,7 @@ shortestPathAll ::
   -> Maybe (w, [v]) -- ^ the list of vertices of the path associated with the weight
 shortestPathAll getNext combineWeight start = let
   d = dijkstra getNext combineWeight start Nothing
-  in \end -> buildPath start end d
+  in \end -> buildPath start end (fmap (\(w, s) -> (w, Set.elemAt 0 s)) d)
 
 buildPath ::
   (Hashable v, Show w, Ord v, Ord w, Num w)
