@@ -4,7 +4,7 @@ import Utils
 import qualified Data.Text as Text
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
-import Data.List (sortBy, find, maximumBy)
+import Data.List (find, maximumBy)
 import Data.Ord (comparing)
 
 fileContent = parseContent $(getFile)

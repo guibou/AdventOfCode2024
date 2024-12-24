@@ -1,6 +1,5 @@
 module Day14 (day, day', ex, fileContent) where
 
-import Control.Applicative (some)
 import Data.Map.Strict qualified as Map
 import GHC.Generics
 import Utils

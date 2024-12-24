@@ -32,7 +32,7 @@ module Utils
 
     -- * Nice reexport
     void, guard,
-    some, many
+    some, many,
   )
 where
 
@@ -50,7 +50,7 @@ import Data.Functor (($>))
 import Data.Functor.Identity
 import Data.HashMap.Strict qualified as HashMap
 import Data.Hashable (Hashable (..))
-import Data.List (isPrefixOf, sort)
+import Data.List (isPrefixOf, sort, sortBy, sortOn, foldl')
 import Data.List.Split (chunksOf)
 import Data.Map (Map)
 import Data.Map.Strict qualified as Map

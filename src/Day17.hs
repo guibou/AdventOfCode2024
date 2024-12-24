@@ -134,6 +134,7 @@ day' computer = do
     _ -> pure Nothing
 
 cvIntToInteger (CInteger i) = i
+cvIntToInteger _ = error "Is not a cv integer"
 
 solver computer = SBV.optimize SBV.Lexicographic $ do
   let constraints = run' computer
@@ -145,20 +146,21 @@ solver computer = SBV.optimize SBV.Lexicographic $ do
 
   SBV.minimize "unknown" unknown
 
-toConstraint :: _ -> Expr -> SBV.SBool
-toConstraint unknown (EqMod a b) = toExpr unknown a `SBV.sMod` (fromIntegral 8) SBV..== (fromIntegral b)
+toConstraint :: SBV.SInt64 -> Expr -> SBV.SBool
+toConstraint unknown (EqMod a b) = toExpr unknown a `SBV.sMod` 8 SBV..== (fromIntegral b)
 toConstraint unknown (Neq0 a) = toExpr unknown a SBV../= 0
 toConstraint unknown (Eq0 a) = toExpr unknown a SBV..== 0
+toConstraint _unknown e = error $ show e
 
 toExpr :: SBV.SInt64 -> Expr -> SBV.SInt64
 toExpr unknown Unknown = unknown
 toExpr unknown (Div a b) = SBV.sDiv (toExpr unknown a) (toExpr unknown b)
 toExpr unknown (Mod a b) = SBV.sMod (toExpr unknown a) (fromIntegral b)
-toExpr unknown (Lit i) = fromIntegral i
+toExpr _unknown (Lit i) = fromIntegral i
 toExpr unknown (XorEi a b) = toExpr unknown a `xor` (fromIntegral b)
 toExpr unknown (XorE a b) = toExpr unknown a `xor` toExpr unknown b
 toExpr unknown (Pow (Lit 2) b) = 1 `SBV.sShiftLeft` (toExpr unknown b)
-toExpr unknown e = error $ show e
+toExpr _unknown e = error $ show e
 
 data Expr
   = Unknown
@@ -204,16 +206,19 @@ instance OpE Expr where
   divE = Div
   z = error "Not required!"
 
-run' :: Computer Expr -> _
+run' :: Computer Expr -> Set Expr
 run' computer = Set.map simplify $ Set.fromList $ do
   let program' = Vector.take (length computer.program - 4) computer.program
-      [5, comboOut, 3, 0] = drop (length computer.program - 4) $ Vector.toList computer.program
+      comboOut = case drop (length computer.program - 4) $ Vector.toList computer.program of
+       [5, comboOut, 3, 0] -> comboOut
+       o -> error $ show o
   let computer' =
         computer
           { program = program',
             registerA = Unknown
           }
 
+      go _ [] = error "We should not reach the latest round without being caught first"
       go computer [latestValue] = do
         let computer' = fst $ run (computer { pc = 0 })
         let outValue = combo computer' comboOut

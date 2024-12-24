@@ -5,7 +5,6 @@ import Text.Megaparsec.Char
 import Control.Applicative ((<|>))
 import qualified Data.Map as Map
 import Data.Bits (xor, Bits (..))
-import Data.List (foldl')
 
 fileContent = parseContent $(getFile)
 

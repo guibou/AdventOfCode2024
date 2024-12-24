@@ -6,7 +6,6 @@ import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import GHC.Generics
 import Direction
-import Data.List (foldl')
 
 fileContent = parseContent $(getFile)
 
