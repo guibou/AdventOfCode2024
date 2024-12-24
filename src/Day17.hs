@@ -63,7 +63,7 @@ run computer
         0 -> do
           -- adv
           let numerator = computer.registerA
-          let denominator = litE 2 `powInt` (combo computer operand)
+          let denominator = pow2Int (combo computer operand)
           run (computer {registerA = numerator `divE` denominator, pc = computer.pc + 2})
         1 -> do
           -- bxl
@@ -85,12 +85,12 @@ run computer
         6 -> do
           -- bdv
           let numerator = computer.registerA
-          let denominator = litE 2 `powInt` (combo computer operand)
+          let denominator = pow2Int (combo computer operand)
           run (computer {registerB = numerator `divE` denominator, pc = computer.pc + 2})
         7 -> do
           -- cdv
           let numerator = computer.registerA
-          let denominator = litE 2 `powInt` (combo computer operand)
+          let denominator = pow2Int (combo computer operand)
           run (computer {registerC = numerator `divE` denominator, pc = computer.pc + 2})
         _ -> error $ "Instruction not found:" <> show instruction
 
@@ -100,7 +100,7 @@ day computer = intercalate "," (map show $ snd $ run computer)
 class OpE e where
   xorEi :: e -> Int -> e
   xorE :: e -> e -> e
-  powInt :: e -> e -> e
+  pow2Int :: e -> e
   divE :: e -> e -> e
   modE :: e -> Int -> e
   litE :: Integer -> e
@@ -109,7 +109,7 @@ class OpE e where
 instance OpE Int where
   xorE = xor
   xorEi = xor
-  powInt = (^)
+  pow2Int = (2^)
   divE = div
   modE = mod
   litE = fromIntegral
@@ -159,14 +159,14 @@ toExpr unknown (Mod a b) = SBV.sMod (toExpr unknown a) (fromIntegral b)
 toExpr _unknown (Lit i) = fromIntegral i
 toExpr unknown (XorEi a b) = toExpr unknown a `xor` (fromIntegral b)
 toExpr unknown (XorE a b) = toExpr unknown a `xor` toExpr unknown b
-toExpr unknown (Pow (Lit 2) b) = 1 `SBV.sShiftLeft` (toExpr unknown b)
+toExpr unknown (Pow2 b) = 1 `SBV.sShiftLeft` (toExpr unknown b)
 
 data Expr t where
   Unknown :: Expr Int
   Div :: Expr Int -> Expr Int -> Expr Int
   XorE :: Expr Int -> Expr Int -> Expr Int
   XorEi :: Expr Int -> Int -> Expr Int
-  Pow :: Expr Int -> Expr Int -> Expr Int
+  Pow2 :: Expr Int -> Expr Int
   Mod :: Expr Int -> Int -> Expr Int
   Lit :: Integer -> Expr Int
 
@@ -179,9 +179,8 @@ deriving instance Eq (Expr t)
 deriving instance Ord (Expr t)
 
 simplifyStep :: (Expr t) -> (Expr t)
-simplifyStep (Pow (Lit a) (Lit b)) = Lit (a ^ b)
 simplifyStep (Lit a) = Lit a
-simplifyStep (Pow a b) = Pow (simplify a) (simplify b)
+simplifyStep (Pow2 b) = Pow2 (simplify b)
 simplifyStep Unknown = Unknown
 simplifyStep (Div (Div e (Lit x)) (Lit y)) = Div (simplify e) (Lit (x * y))
 simplifyStep (Div a b) = Div (simplify a) (simplify b)
@@ -201,7 +200,7 @@ simplify x
 instance OpE (Expr Int) where
   xorE = XorE
   xorEi = XorEi
-  powInt = Pow
+  pow2Int = Pow2
   litE i = Lit i
   modE = Mod
   divE = Div
