@@ -1,3 +1,4 @@
+{-# LANGUAGE GADTs #-}
 module Day17 where
 
 import Data.Bits (xor)
@@ -146,13 +147,12 @@ solver computer = SBV.optimize SBV.Lexicographic $ do
 
   SBV.minimize "unknown" unknown
 
-toConstraint :: SBV.SInt64 -> Expr -> SBV.SBool
+toConstraint :: SBV.SInt64 -> Expr Bool -> SBV.SBool
 toConstraint unknown (EqMod a b) = toExpr unknown a `SBV.sMod` 8 SBV..== (fromIntegral b)
 toConstraint unknown (Neq0 a) = toExpr unknown a SBV../= 0
 toConstraint unknown (Eq0 a) = toExpr unknown a SBV..== 0
-toConstraint _unknown e = error $ show e
 
-toExpr :: SBV.SInt64 -> Expr -> SBV.SInt64
+toExpr :: SBV.SInt64 -> Expr Int -> SBV.SInt64
 toExpr unknown Unknown = unknown
 toExpr unknown (Div a b) = SBV.sDiv (toExpr unknown a) (toExpr unknown b)
 toExpr unknown (Mod a b) = SBV.sMod (toExpr unknown a) (fromIntegral b)
@@ -160,24 +160,25 @@ toExpr _unknown (Lit i) = fromIntegral i
 toExpr unknown (XorEi a b) = toExpr unknown a `xor` (fromIntegral b)
 toExpr unknown (XorE a b) = toExpr unknown a `xor` toExpr unknown b
 toExpr unknown (Pow (Lit 2) b) = 1 `SBV.sShiftLeft` (toExpr unknown b)
-toExpr _unknown e = error $ show e
 
-data Expr
-  = Unknown
-  | Div Expr Expr
+data Expr t where
+  Unknown :: Expr Int
+  Div :: Expr Int -> Expr Int -> Expr Int
+  XorE :: Expr Int -> Expr Int -> Expr Int
+  XorEi :: Expr Int -> Int -> Expr Int
+  Pow :: Expr Int -> Expr Int -> Expr Int
+  Mod :: Expr Int -> Int -> Expr Int
+  Lit :: Integer -> Expr Int
 
-  | XorE Expr Expr
-  | XorEi Expr Int
+  EqMod :: Expr Int -> Int -> Expr Bool
+  Eq0 :: Expr Int -> Expr Bool
+  Neq0 :: Expr Int -> Expr Bool
 
-  | Pow Expr Expr
-  | Mod Expr Int
-  | Lit Integer
-  | EqMod Expr Int
-  | Eq0 Expr
-  | Neq0 Expr
-  deriving (Show, Ord, Eq)
+deriving instance Show (Expr t)
+deriving instance Eq (Expr t)
+deriving instance Ord (Expr t)
 
-simplifyStep :: Expr -> Expr
+simplifyStep :: (Expr t) -> (Expr t)
 simplifyStep (Pow (Lit a) (Lit b)) = Lit (a ^ b)
 simplifyStep (Lit a) = Lit a
 simplifyStep (Pow a b) = Pow (simplify a) (simplify b)
@@ -197,7 +198,7 @@ simplify x
   where x' = simplifyStep x
 
 
-instance OpE Expr where
+instance OpE (Expr Int) where
   xorE = XorE
   xorEi = XorEi
   powInt = Pow
@@ -206,13 +207,13 @@ instance OpE Expr where
   divE = Div
   z = error "Not required!"
 
-run' :: Computer Expr -> Set Expr
+run' :: Computer (Expr Int) -> Set (Expr Bool)
 run' computer = Set.map simplify $ Set.fromList $ do
   let program' = Vector.take (length computer.program - 4) computer.program
       comboOut = case drop (length computer.program - 4) $ Vector.toList computer.program of
        [5, comboOut, 3, 0] -> comboOut
        o -> error $ show o
-  let computer' =
+  let computer' :: Computer (Expr Int) =
         computer
           { program = program',
             registerA = Unknown
