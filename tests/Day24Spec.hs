@@ -12,10 +12,8 @@ spec = do
   describe "simple examples" $ do
     it "of first star" $ do
       day ex `shouldBe` 4
-    it "of second star" $ do
-      day' ex `shouldBe` 0
   describe "works" $ do
     it "on first star" $ do
       day fileContent `shouldBe` 43942008931358
     it "on second star" $ do
-      day' fileContent `shouldBe` 0
+      day' fileContent `shouldBe` "dvb,fhg,fsq,tnc,vcf,z10,z17,z39"
