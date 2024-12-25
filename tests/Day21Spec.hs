@@ -16,4 +16,4 @@ spec = do
     it "on first star" $ do
       day fileContent `shouldBe` 109758
     it "on second star" $ do
-      day' 25 fileContent `shouldBe` 0
+      day' fileContent `shouldBe` 134341709499296

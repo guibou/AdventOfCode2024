@@ -57,7 +57,7 @@ toHorizontalMove (-1) = '<'
 toHorizontalMove x = error $ show x
 
 -- Assumes the code starts on "A" and ends on "A"
-enterCode code = go 'A' code
+enterCode startPos code = go startPos code
   where
     go _ [] = [[]]
     go from (to:xs) = do
@@ -98,34 +98,42 @@ controllerMove from to = do
         | from `elemString` "<" && to `elemString` "^A" -> [horizontalMoves <> verticalMoves]
         | otherwise -> nub [horizontalMoves <> verticalMoves, verticalMoves <> horizontalMoves]
 
-enterMoves moves = go 'A' moves
+enterMoves :: Int -> [Char] -> Int
+enterMoves 0 moves = length moves
+enterMoves n moves  = go n moves
   where
-    go _ [] = [[]]
-    go from (to:xs) = do
-      moves <- controllerMove from to
-      nexts <- go to xs
-      pure $ moves <> "A" <> nexts
+    f n from to = minimum $ do
+            move <- controllerMove from to
+            pure $ go (n -1) (move <> "A")
+
+    fMemo = memoize3 f
+
+    go 0 moves = length moves
+
+    go n moves = do
+      let 
+        from_to = zip ('A':moves) moves
+        next_moves = sum $ map (\(from, to) -> fMemo n from to) from_to
+      next_moves
 
 -- * FIRST problem
-day = sum . map (weightCode 2)
+day = run 2
 
-getSequence n code = do
-  a <- enterCode code
-  go n a
-  where
-    go 0 a = pure a
-    go n a = do
-      b <- enterMoves a
-      go (n - 1) b
+getSequence :: Int -> String -> Int
+getSequence n code = minimum $ do
+  a <- enterCode 'A' code
+  pure $ enterMoves n a
 
-weightCode (n :: Int) code = minimum $ do
-  buttonPress <- getSequence n code
-  let weight = length buttonPress * read (take 3 code)
-  pure $ weight
+weightCode (n :: Int) code = do
+  let lenButtonPress = getSequence n code
+  let weight = lenButtonPress * read (take 3 code)
+  weight
+
+run n = sum . map (weightCode n)
 
 -- * SECOND problem
 -- Brute force DOES NOT work
-day' = undefined -- sum . map (weightCode 25)
+day' = run 25
 
 ex = parseContent [str|\
 029A
@@ -138,4 +146,7 @@ ex = parseContent [str|\
 
 -- 112958 is too high! ?
 -- 111474 is too high too...
+--
+-- 153242207901942 is too high!
+--
 -- started at Sun Dec 22 03:02:06 PM +04 2024
