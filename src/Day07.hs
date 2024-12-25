@@ -1,7 +1,6 @@
 module Day07 where
 
 import Utils
-import Control.Applicative
 
 fileContent = parseContent $(getFile)
 

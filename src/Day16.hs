@@ -7,7 +7,6 @@ import Direction
 import Path (shortestPaths, buildPath)
 import Data.Maybe (fromJust)
 import qualified Data.HashMap.Strict as HM
-import Data.Foldable (foldl')
 
 fileContent = parseContent $(getFile)
 

@@ -1,7 +1,6 @@
 module Day05 where
 
 import Utils
-import Control.Applicative
 import Text.Megaparsec (sepBy)
 import qualified Data.Set as Set
 
