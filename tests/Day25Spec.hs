@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -Wno-type-defaults #-}
-module Day21Spec where
+module Day25Spec where
 
-import Day21
+import Day25
 import Test.Syd
 
 -- We default to Int for performance, if Integer is required, it will be force typed on the different Day
@@ -11,9 +11,7 @@ spec :: Spec
 spec = do
   describe "simple examples" $ do
     it "of first star" $ do
-      day ex `shouldBe` 126384
+      day ex `shouldBe` 3
   describe "works" $ do
     it "on first star" $ do
-      day fileContent `shouldBe` 109758
-    it "on second star" $ do
-      day' 25 fileContent `shouldBe` 0
+      day fileContent `shouldBe` 2900
